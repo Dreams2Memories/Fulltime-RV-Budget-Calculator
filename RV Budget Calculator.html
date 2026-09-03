@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full-Time RV Cost Calculator — Dreams2Memories</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --ink:#F4EFE6;
+    --ink-dim:#B9B2A4;
+    --ink-faint:#8A8377;
+    --bg-0:#191712;
+    --bg-1:#221F19;
+    --bg-2:#2B2721;
+    --line:#3A352C;
+    --orange:#D9772E;
+    --orange-dim:#8F5423;
+    --sage:#7C9070;
+    --rust:#B24A34;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg-0);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:0 16px 60px;}
+
+  header{padding:36px 0 24px;border-bottom:1px solid var(--line);margin-bottom:24px;}
+  .eyebrow{font-family:'Roboto Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin:0 0 10px;}
+  h1{font-family:'Roboto Slab',serif;font-weight:700;font-size:clamp(26px,4vw,40px);line-height:1.1;margin:0 0 12px;}
+  header p{color:var(--ink-dim);font-size:16px;line-height:1.55;max-width:60ch;margin:0;}
+
+  /* Mode toggle */
+  .mode-toggle{display:flex;gap:8px;margin-bottom:24px;}
+  .mode-btn{
+    flex:1;
+    min-height:48px;
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-family:'Roboto Mono',monospace;
+    font-size:13px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    border-radius:4px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .mode-btn.active{
+    background:var(--bg-2);
+    border-color:var(--orange-dim);
+    color:var(--orange);
+  }
+  .mode-hint{font-size:12px;color:var(--ink-faint);margin:-16px 0 24px;text-align:center;}
+
+  .grid{display:grid;grid-template-columns:1.15fr 0.85fr;gap:24px;align-items:start;}
+  @media (max-width:760px){.grid{grid-template-columns:1fr;}}
+
+  .card{background:var(--bg-1);border:1px solid var(--line);border-radius:4px;padding:20px 20px;margin-bottom:18px;}
+  .card h2{font-family:'Roboto Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+  .card h2 .n{color:var(--orange);}
+
+  .note{
+    font-size:13px;
+    color:var(--ink-dim);
+    background:var(--bg-2);
+    border-left:2px solid var(--orange-dim);
+    padding:9px 12px;
+    margin:0 0 14px;
+    line-height:1.5;
+  }
+  .note b{color:var(--orange);}
+
+  .field{
+    display:grid;
+    grid-template-columns:1fr 140px;
+    align-items:center;
+    gap:12px;
+    padding:11px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .field:last-child{border-bottom:none;}
+  @media (max-width:480px){
+    .field{grid-template-columns:1fr;gap:6px;}
+  }
+  .field label{font-size:14.5px;color:var(--ink);}
+  .field .sub{display:block;font-size:12px;color:var(--ink-faint);margin-top:2px;}
+  .inputwrap{position:relative;}
+  .inputwrap span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-family:'Roboto Mono',monospace;font-size:14px;pointer-events:none;}
+  input[type=number]{
+    width:100%;
+    min-height:46px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:'Roboto Mono',monospace;
+    font-size:16px;
+    padding:9px 10px 9px 22px;
+    border-radius:3px;
+    -moz-appearance:textfield;
+  }
+  input[type=number]:focus{outline:none;border-color:var(--orange-dim);box-shadow:0 0 0 2px rgba(217,119,46,0.18);}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .offset-field label{color:var(--sage);}
+
+  .detailed-only{display:none;}
+  .wrap.show-detailed .detailed-only{display:block;}
+  .wrap.show-detailed .field.detailed-only{display:grid;}
+  .simple-only{display:block;}
+  .wrap.show-detailed .simple-only{display:none;}
+  @media (max-width:480px){
+    .wrap.show-detailed .field.detailed-only{display:grid;}
+  }
+
+  /* Summary */
+  .summary{position:sticky;top:16px;}
+  .odometer-card{background:var(--bg-2);border:1px solid var(--orange-dim);border-radius:4px;padding:22px;text-align:center;margin-bottom:16px;}
+  .odometer-label{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px;}
+  .odometer{display:inline-flex;background:var(--bg-0);border:1px solid var(--line);border-radius:3px;padding:10px 6px;}
+  .odometer .digit{font-family:'Roboto Mono',monospace;font-weight:700;font-size:clamp(28px,6vw,42px);color:var(--orange);width:0.62em;text-align:center;line-height:1;}
+  .odometer .dollar{font-family:'Roboto Mono',monospace;font-weight:700;font-size:clamp(28px,6vw,42px);color:var(--ink-faint);line-height:1;padding-right:2px;}
+
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .trio div{background:var(--bg-0);border:1px solid var(--line);border-radius:3px;padding:8px 4px;text-align:center;}
+  .trio .tlabel{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;}
+  .trio .tval{font-family:'Roboto Mono',monospace;font-weight:500;font-size:14px;margin-top:3px;color:var(--ink);}
+
+  .statrow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .statrow:last-child{border-bottom:none;}
+  .statrow .label{color:var(--ink-dim);}
+  .statrow .val{font-family:'Roboto Mono',monospace;font-weight:500;}
+  .statrow.positive .val{color:var(--sage);}
+  .statrow.negative .val{color:var(--rust);}
+
+  .compare-result{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--ink-dim);line-height:1.5;}
+  .compare-result b{color:var(--sage);font-family:'Roboto Mono',monospace;}
+  .compare-result.over b{color:var(--rust);}
+  .fineprint{font-size:11.5px;color:var(--ink-faint);margin-top:10px;line-height:1.5;}
+
+  .budget-status{margin-top:14px;padding:12px;border-radius:3px;font-family:'Roboto Mono',monospace;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;text-align:center;border:1px solid var(--line);}
+  .budget-status.room{color:var(--sage);border-color:var(--sage);}
+  .budget-status.tight{color:var(--orange);border-color:var(--orange-dim);}
+  .budget-status.over{color:var(--rust);border-color:var(--rust);}
+  .budget-status.empty{color:var(--ink-faint);}
+
+  /* Breakdown */
+  .bar-row{margin-bottom:12px;}
+  .bar-row .bhead{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
+  .bar-row .bhead .bname{color:var(--ink);}
+  .bar-row .bhead .bval{color:var(--ink-dim);font-family:'Roboto Mono',monospace;}
+  .bar-track{background:var(--bg-0);border:1px solid var(--line);border-radius:3px;height:8px;overflow:hidden;}
+  .bar-fill{background:var(--orange);height:100%;border-radius:2px;}
+  .bar-empty{font-size:13px;color:var(--ink-faint);}
+
+  .btnrow{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  .btn{
+    flex:1;
+    min-height:48px;
+    min-width:140px;
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:'Roboto Mono',monospace;
+    font-size:13px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .btn:hover{border-color:var(--orange-dim);}
+  .btn.primary{color:var(--orange);border-color:var(--orange-dim);}
+
+  footer{margin-top:20px;font-size:12px;color:var(--ink-faint);text-align:center;line-height:1.7;}
+  footer .credit{color:var(--ink-dim);font-size:13px;margin-bottom:6px;}
+  .disclaimer{font-size:11.5px;color:var(--ink-faint);line-height:1.6;max-width:60ch;margin:14px auto 0;}
+
+  .print-only{display:none;}
+  @media print{
+    body{background:#fff;color:#111;}
+    .no-print{display:none !important;}
+    .print-only{display:block;}
+    .wrap{max-width:100%;}
+  }
+  .print-only h2{font-family:'Roboto Slab',serif;font-size:20px;margin:22px 0 8px;}
+  .print-only .prow{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;border-bottom:1px solid #ddd;}
+  .print-only .ptotal{font-weight:700;font-size:16px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+
+  <header class="no-print">
+    <p class="eyebrow">Dreams2Memories &mdash; Real Talk</p>
+    <h1>Full-time RV cost calculator</h1>
+    <p>No sugarcoating. Enter your real numbers and see what full-time RV life actually costs &mdash; the same way we track our own. Simple enough to use in two minutes, detailed enough to trust.</p>
+  </header>
+
+  <div class="mode-toggle no-print">
+    <button class="mode-btn active" id="btnSimple" onclick="setMode('simple')">Simple</button>
+    <button class="mode-btn" id="btnDetailed" onclick="setMode('detailed')">Detailed</button>
+  </div>
+  <p class="mode-hint no-print" id="modeHint">Quick estimate with the essentials. Switch to Detailed any time &mdash; nothing you've entered gets lost.</p>
+
+  <div class="grid no-print">
+    <div class="inputs">
+
+      <div class="card">
+        <h2><span class="n">01</span> Home base</h2>
+        <div class="field">
+          <label>RV payment<span class="sub">Loan or financing, monthly</span></label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="rigPayment"></div>
+        </div>
+        <div class="field">
+          <label>RV insurance</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="insurance"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>Tow vehicle / motorhome payment</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="towPayment"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>Vehicle insurance</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="vehicleInsurance"></div>
+        </div>
+        <div class="field">
+          <label>Health insurance</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="health"></div>
+        </div>
+        <div class="field">
+          <label>Cell / internet / Starlink</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="internet"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">02</span> On the road</h2>
+        <div class="note">Don't use your cheapest campground stay here. Think about what you'll realistically average over an entire year.</div>
+        <div class="field">
+          <label>Campground fees<span class="sub">Averaged monthly across the year</span></label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="campground"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>RV memberships<span class="sub">Thousand Trails, Harvest Hosts, Passport America — averaged monthly</span></label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="rvMemberships"></div>
+        </div>
+        <div class="note" style="margin-top:14px;">Your fuel budget depends heavily on how often you move. Slowing down can dramatically change this number.</div>
+        <div class="field">
+          <label>Fuel</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="fuel"></div>
+        </div>
+        <div class="field">
+          <label>Propane</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="propane"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>Tolls / parking</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="tolls"></div>
+        </div>
+      </div>
+
+      <div class="card detailed-only">
+        <h2><span class="n">03</span> Everyday life</h2>
+        <div class="field">
+          <label>Groceries</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="groceries"></div>
+        </div>
+        <div class="field">
+          <label>Dining out</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="diningOut"></div>
+        </div>
+        <div class="field">
+          <label>Entertainment / activities</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="entertainment"></div>
+        </div>
+        <div class="field">
+          <label>Laundry</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="laundry"></div>
+        </div>
+        <div class="field">
+          <label>Pet expenses</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="petExpenses"></div>
+        </div>
+        <div class="field">
+          <label>Other recurring expenses</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="otherRecurring"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">04</span> Maintenance buffer</h2>
+        <div class="note">Real talk: something will eventually break. A maintenance fund turns an RV repair from an emergency into an expense you planned for.</div>
+        <div class="field">
+          <label>RV maintenance &amp; repair fund</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="maintenance"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>Tow vehicle / motorhome maintenance fund</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="towMaintenance"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>Tire replacement reserve</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="tireReserve"></div>
+        </div>
+        <div class="field detailed-only">
+          <label>Registration / inspection / taxes</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="registration"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">05</span> Monthly income / offsets</h2>
+        <div class="field offset-field">
+          <label>Social Security / retirement income</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="ssRetirement"></div>
+        </div>
+        <div class="field offset-field">
+          <label>Remote work / job income</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="remoteWork"></div>
+        </div>
+        <div class="field offset-field">
+          <label>Workamping income / stipend</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="workamp"></div>
+        </div>
+        <div class="field offset-field">
+          <label>Sponsorships / other RV-related income</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="sponsorship"></div>
+        </div>
+        <div class="field offset-field">
+          <label>Other income / monthly savings withdrawal</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="otherIncome"></div>
+        </div>
+      </div>
+
+      <div class="card simple-only">
+        <h2>What does your life cost now?<span style="font-weight:400;text-transform:none;color:var(--ink-faint);letter-spacing:0;"> &mdash; optional, quick estimate</span></h2>
+        <div class="field">
+          <label>Current monthly cost of living<span class="sub">Approximately what does your life cost you each month today?</span></label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currSimple"></div>
+        </div>
+        <div class="note">Switch to Detailed mode and break this into categories for a more accurate comparison.</div>
+      </div>
+
+      <div class="card detailed-only">
+        <h2>What does your life cost now?<span style="font-weight:400;text-transform:none;color:var(--ink-faint);letter-spacing:0;"> &mdash; optional, more accurate comparison</span></h2>
+        <div class="field">
+          <label>Mortgage / rent</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currMortgage"></div>
+        </div>
+        <div class="field">
+          <label>Utilities</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currUtilities"></div>
+        </div>
+        <div class="field">
+          <label>Vehicle expenses</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currVehicle"></div>
+        </div>
+        <div class="field">
+          <label>Insurance</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currInsurance"></div>
+        </div>
+        <div class="field">
+          <label>Groceries</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currGroceries"></div>
+        </div>
+        <div class="field">
+          <label>Entertainment</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currEntertainment"></div>
+        </div>
+        <div class="field">
+          <label>Other</label>
+          <div class="inputwrap"><span>$</span><input type="number" min="0" value="0" id="currOther"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Can I afford this?<span style="font-weight:400;text-transform:none;color:var(--ink-faint);letter-spacing:0;"> &mdash; optional</span></h2>
+        <div class="budget-status empty" id="budgetStatus">Enter your income above to see how it compares.</div>
+      </div>
+
+    </div>
+
+    <div class="summary">
+      <div class="odometer-card">
+        <div class="odometer-label">Cost of RV life</div>
+        <div class="odometer" id="odometer"></div>
+        <div class="trio">
+          <div><div class="tlabel">Per day</div><div class="tval" id="tDaily">$0</div></div>
+          <div><div class="tlabel">Per month</div><div class="tval" id="tMonthly">$0</div></div>
+          <div><div class="tlabel">Per year</div><div class="tval" id="tAnnual">$0</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>The breakdown</h2>
+        <div class="statrow"><span class="label">Cost of RV life</span><span class="val" id="grossVal">$0</span></div>
+        <div class="statrow"><span class="label">Monthly income / offsets</span><span class="val" id="offsetVal">$0</span></div>
+        <div class="statrow" id="surplusRow"><span class="label">Money remaining / shortfall</span><span class="val" id="surplusVal">$0</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Where it's going</h2>
+        <div id="breakdownWrap"><span class="bar-empty">Enter some numbers to see your breakdown.</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Current life vs. RV life</h2>
+        <div class="statrow"><span class="label">Current life</span><span class="val" id="currentVal">$0 / mo</span></div>
+        <div class="statrow"><span class="label">Full-time RV life</span><span class="val" id="rvLifeVal">$0 / mo</span></div>
+        <div class="compare-result" id="compareResult">Fill in "What does your life cost now?" to see the difference.</div>
+        <div class="fineprint">This is an estimate based on what you enter, not a guarantee of savings.</div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn" onclick="resetCalculator()">Reset calculator</button>
+        <button class="btn primary" onclick="printResults()">Print / save results</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="no-print">
+    <p class="credit">Built by Matt &amp; Maria | Dreams2MemoriesRV</p>
+    <p>Five years of full-time RV life taught us that the little expenses matter just as much as the big ones.</p>
+    <p class="disclaimer">This calculator is designed as a planning tool based on real-world full-time RV experience. Your actual expenses will vary based on your RV, travel style, location, insurance, financing and personal spending. This is not financial advice.</p>
+  </footer>
+
+  <div class="print-only" id="printSummary"></div>
+
+</div>
+
+<script>
+  const CATEGORY_MAP = {
+    rigPayment:'Housing / rig', towPayment:'Housing / rig',
+    insurance:'Insurance', vehicleInsurance:'Insurance', health:'Insurance',
+    internet:'Connectivity',
+    campground:'Campgrounds', rvMemberships:'Campgrounds',
+    fuel:'Transportation / fuel', propane:'Transportation / fuel', tolls:'Transportation / fuel',
+    groceries:'Food', diningOut:'Food',
+    maintenance:'Maintenance', towMaintenance:'Maintenance', tireReserve:'Maintenance', registration:'Maintenance',
+    entertainment:'Lifestyle', laundry:'Lifestyle', petExpenses:'Lifestyle',
+    otherRecurring:'Other'
+  };
+  const COST_IDS = Object.keys(CATEGORY_MAP);
+  const OFFSET_IDS = ['ssRetirement','remoteWork','workamp','sponsorship','otherIncome'];
+  const CURR_IDS = ['currMortgage','currUtilities','currVehicle','currInsurance','currGroceries','currEntertainment','currOther'];
+  const LABELS = {
+    rigPayment:'RV payment', towPayment:'Tow vehicle / motorhome payment', insurance:'RV insurance',
+    vehicleInsurance:'Vehicle insurance', health:'Health insurance', internet:'Cell / internet / Starlink',
+    campground:'Campground fees', rvMemberships:'RV memberships', fuel:'Fuel', propane:'Propane', tolls:'Tolls / parking',
+    groceries:'Groceries', diningOut:'Dining out', entertainment:'Entertainment / activities', laundry:'Laundry',
+    petExpenses:'Pet expenses', otherRecurring:'Other recurring expenses', maintenance:'RV maintenance & repair fund',
+    towMaintenance:'Tow vehicle / motorhome maintenance', tireReserve:'Tire replacement reserve', registration:'Registration / inspection / taxes',
+    ssRetirement:'Social Security / retirement income', remoteWork:'Remote work / job income',
+    workamp:'Workamping income / stipend', sponsorship:'Sponsorships / other RV-related income', otherIncome:'Other income / monthly savings withdrawal'
+  };
+
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  const val = id => Number(document.getElementById(id).value) || 0;
+
+  function setMode(mode){
+    const wrap = document.getElementById('wrap');
+    const hint = document.getElementById('modeHint');
+    if(mode === 'detailed'){
+      wrap.classList.add('show-detailed');
+      document.getElementById('btnDetailed').classList.add('active');
+      document.getElementById('btnSimple').classList.remove('active');
+      hint.textContent = 'Every category we actually track, for people who want the full picture.';
+    } else {
+      wrap.classList.remove('show-detailed');
+      document.getElementById('btnSimple').classList.add('active');
+      document.getElementById('btnDetailed').classList.remove('active');
+      hint.textContent = "Quick estimate with the essentials. Switch to Detailed any time — nothing you've entered gets lost.";
+    }
+    calculate();
+  }
+
+  function renderOdometer(value){
+    const el = document.getElementById('odometer');
+    const rounded = Math.max(0, Math.round(value));
+    const digits = rounded.toLocaleString('en-US').split('');
+    el.innerHTML = '<span class="dollar">$</span>' + digits.map(d =>
+      d === ',' ? '<span class="digit" style="width:0.3em;color:var(--ink-faint);">,</span>' :
+      '<span class="digit">'+d+'</span>'
+    ).join('');
+  }
+
+  function renderBreakdown(gross){
+    const totals = {};
+    COST_IDS.forEach(id => {
+      const cat = CATEGORY_MAP[id];
+      totals[cat] = (totals[cat] || 0) + val(id);
+    });
+    const entries = Object.entries(totals).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+    const wrapEl = document.getElementById('breakdownWrap');
+    if(entries.length === 0 || gross <= 0){
+      wrapEl.innerHTML = '<span class="bar-empty">Enter some numbers to see your breakdown.</span>';
+      return;
+    }
+    const max = entries[0][1];
+    wrapEl.innerHTML = entries.map(([cat,amt]) => {
+      const pct = gross > 0 ? Math.round((amt/gross)*100) : 0;
+      const width = Math.max(4, Math.round((amt/max)*100));
+      return '<div class="bar-row"><div class="bhead"><span class="bname">'+cat+'</span><span class="bval">'+fmt(amt)+' &middot; '+pct+'%</span></div><div class="bar-track"><div class="bar-fill" style="width:'+width+'%"></div></div></div>';
+    }).join('');
+  }
+
+  function calculate(){
+    let gross = 0, offset = 0, current = 0;
+    COST_IDS.forEach(id => gross += val(id));
+    OFFSET_IDS.forEach(id => offset += val(id));
+    const isDetailed = document.getElementById('wrap').classList.contains('show-detailed');
+    if(isDetailed){
+      CURR_IDS.forEach(id => current += val(id));
+    } else {
+      current = val('currSimple');
+    }
+    const daily = gross / 30.44;
+    const annual = gross * 12;
+
+    renderOdometer(gross);
+    document.getElementById('tDaily').textContent = fmt(daily);
+    document.getElementById('tMonthly').textContent = fmt(gross);
+    document.getElementById('tAnnual').textContent = fmt(annual);
+
+    document.getElementById('grossVal').textContent = fmt(gross);
+    document.getElementById('offsetVal').textContent = fmt(offset);
+
+    const surplus = offset - gross;
+    const surplusRow = document.getElementById('surplusRow');
+    const surplusVal = document.getElementById('surplusVal');
+    surplusVal.textContent = (surplus >= 0 ? fmt(surplus) : '\u2212' + fmt(Math.abs(surplus)));
+    surplusRow.className = 'statrow ' + (offset <= 0 ? '' : (surplus >= 0 ? 'positive' : 'negative'));
+
+    const statusEl = document.getElementById('budgetStatus');
+    if(offset <= 0){
+      statusEl.className = 'budget-status empty';
+      statusEl.textContent = 'Enter your income above to see how it compares.';
+    } else if(surplus < 0){
+      statusEl.className = 'budget-status over';
+      statusEl.textContent = 'Your current estimate is over budget';
+    } else if(surplus / offset < 0.1){
+      statusEl.className = 'budget-status tight';
+      statusEl.textContent = 'This looks tight';
+    } else {
+      statusEl.className = 'budget-status room';
+      statusEl.textContent = 'You have room in the budget';
+    }
+
+    renderBreakdown(gross);
+
+    document.getElementById('currentVal').textContent = fmt(current) + ' / mo';
+    document.getElementById('rvLifeVal').textContent = fmt(gross) + ' / mo';
+    const cmp = document.getElementById('compareResult');
+    if(current <= 0){
+      cmp.className = 'compare-result';
+      cmp.innerHTML = 'Fill in "What does your life cost now?" to see the difference.';
+    } else {
+      const diff = current - gross;
+      cmp.className = 'compare-result' + (diff < 0 ? ' over' : '');
+      if(diff >= 0){
+        cmp.innerHTML = 'Full-time RV life looks like it could save you <b>' + fmt(diff) + '/month</b> &mdash; about <b>' + fmt(diff*12) + '/year</b>.';
+      } else {
+        cmp.innerHTML = 'Based on these numbers, full-time RV life may cost <b>' + fmt(Math.abs(diff)) + '/month more</b> than your current life.';
+      }
+    }
+
+    buildPrintSummary(gross, offset, daily, annual, current, surplus);
+  }
+
+  function buildPrintSummary(gross, offset, daily, annual, current, surplus){
+    let lines = COST_IDS.filter(id => val(id) > 0).map(id =>
+      '<div class="prow"><span>'+LABELS[id]+'</span><span>'+fmt(val(id))+'</span></div>'
+    ).join('');
+    let offsetLines = OFFSET_IDS.filter(id => val(id) > 0).map(id =>
+      '<div class="prow"><span>'+LABELS[id]+'</span><span>'+fmt(val(id))+'</span></div>'
+    ).join('');
+    let html = '<h1 style="font-family:\'Roboto Slab\',serif;">Dreams2Memories &mdash; Full-time RV cost calculator</h1>';
+    html += '<h2>Expenses</h2>' + (lines || '<div class="prow"><span>No expenses entered</span><span></span></div>');
+    html += '<h2>Totals</h2>';
+    html += '<div class="prow ptotal"><span>Cost of RV life</span><span>'+fmt(gross)+'</span></div>';
+    html += '<div class="prow"><span>Per day</span><span>'+fmt(daily)+'</span></div>';
+    html += '<div class="prow"><span>Per year</span><span>'+fmt(annual)+'</span></div>';
+    if(current > 0){
+      html += '<h2>Current life vs. RV life</h2>';
+      html += '<div class="prow"><span>Current life</span><span>'+fmt(current)+' / mo</span></div>';
+      html += '<div class="prow"><span>Full-time RV life</span><span>'+fmt(gross)+' / mo</span></div>';
+      html += '<div class="prow ptotal"><span>Difference</span><span>'+(current-gross>=0?'':'&minus;')+fmt(Math.abs(current-gross))+' / mo</span></div>';
+    }
+    if(offsetLines){ html += '<h2>Monthly income / offsets</h2>' + offsetLines; }
+    if(offset > 0){
+      html += '<h2>Budget check</h2>';
+      html += '<div class="prow ptotal"><span>Money remaining / shortfall</span><span>'+(surplus>=0?'':'&minus;')+fmt(Math.abs(surplus))+'</span></div>';
+    }
+    html += '<p style="font-size:11.5px;color:#666;margin-top:24px;">This calculator is designed as a planning tool based on real-world full-time RV experience. Your actual expenses will vary based on your RV, travel style, location, insurance, financing and personal spending. This is not financial advice.</p>';
+    html += '<p style="font-size:12px;color:#666;">Built by Matt & Maria | Dreams2MemoriesRV</p>';
+    document.getElementById('printSummary').innerHTML = html;
+  }
+
+  function printResults(){
+    calculate();
+    window.print();
+  }
+
+  function resetCalculator(){
+    if(!confirm('Reset all fields back to zero?')) return;
+    [...COST_IDS, ...OFFSET_IDS, ...CURR_IDS, 'currSimple'].forEach(id => {
+      document.getElementById(id).value = 0;
+    });
+    calculate();
+  }
+
+  [...COST_IDS, ...OFFSET_IDS, ...CURR_IDS, 'currSimple'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calculate);
+  });
+
+  calculate();
+</script>
+</body>
+</html>
